@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Festival 2026 — Committee Check-in</title>
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7A1428;
+    --maroon-deep:#4A0E1A;
+    --gold:#E3A21A;
+    --teal:#2E6B3F;
+    --cream:#F7EDE0;
+    --cream-2:#FBF6EE;
+    --ink:#2B1810;
+    --line: rgba(122,20,40,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:'Mukta',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.display{font-family:'Yatra One',cursive; font-weight:400;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 60px;}
+  .hidden{display:none !important;}
+
+  .topbar{
+    background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%);
+    color:#fff; padding:18px 16px; text-align:center;
+  }
+  .topbar h1{font-size:24px; margin:0 0 2px;}
+  .topbar .sub{font-size:12.5px; opacity:0.8;}
+
+  .card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:16px;
+    padding:22px 20px; margin-top:16px;
+  }
+  label{display:block; font-size:13px; font-weight:600; color:var(--maroon-deep); margin:14px 0 6px;}
+  label.first{margin-top:0;}
+  input[type=text], input[type=password], textarea, select{
+    width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--line);
+    background:#fff; font-family:'Mukta',sans-serif; font-size:15px; color:var(--ink);
+  }
+  textarea{resize:vertical;}
+  button{font-family:'Mukta',sans-serif; cursor:pointer;}
+  .btn-primary{
+    width:100%; background:var(--maroon); color:#fff; border:none; padding:14px;
+    border-radius:12px; font-size:15px; font-weight:700; margin-top:16px;
+  }
+  .btn-primary:hover{background:var(--maroon-deep);}
+  .btn-secondary{
+    background:transparent; border:1.5px solid var(--maroon); color:var(--maroon);
+    padding:9px 14px; border-radius:9px; font-weight:600; font-size:13px;
+  }
+  .btn-small{padding:7px 12px; border-radius:8px; font-size:12.5px; font-weight:700; border:none;}
+  .error{color:#B0332F; font-size:12.5px; margin-top:8px;}
+  .hint{font-size:12px; opacity:0.65; margin-top:6px;}
+
+  .stat-row{display:flex; gap:10px; margin:16px 0;}
+  .stat{
+    flex:1; background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:12px 8px; text-align:center;
+  }
+  .stat .n{font-size:22px; font-weight:700; color:var(--maroon); font-family:'Yatra One',cursive;}
+  .stat .l{font-size:10.5px; opacity:0.6; text-transform:uppercase; letter-spacing:0.04em;}
+
+  .search-row{display:flex; gap:8px; margin:14px 0;}
+  .search-row input{flex:1;}
+
+  .guest-card{
+    background:#fff; border:1.5px solid var(--line); border-radius:14px;
+    padding:16px; margin-top:12px;
+  }
+  .guest-card.checked-in{border-color:var(--teal); background:#F3FAF4;}
+  .guest-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .guest-name{font-weight:700; font-size:16px; color:var(--maroon-deep);}
+  .guest-ref{font-family:monospace; font-size:11.5px; opacity:0.6; margin-top:2px;}
+  .guest-badge{
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .badge-in{background:#E6F2E8; color:var(--teal);}
+  .badge-out{background:#F3E9E9; color:var(--maroon);}
+  .guest-meta{font-size:12.5px; opacity:0.75; margin-top:8px; line-height:1.5;}
+  .guest-controls{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;}
+  .guest-controls .full{grid-column:1 / -1;}
+  .attend-toggle{
+    display:flex; align-items:center; gap:8px; font-weight:600; font-size:13.5px;
+    padding:10px 12px; border-radius:9px; border:1.5px solid var(--line); background:#fff; cursor:pointer;
+  }
+  .attend-toggle input{width:auto;}
+  .save-status{font-size:11.5px; margin-top:8px; height:14px;}
+  .save-status.ok{color:var(--teal);}
+  .save-status.err{color:#B0332F;}
+
+  footer{text-align:center; font-size:11.5px; opacity:0.5; padding:24px 0;}
+
+  .name-row{display:flex; gap:10px;}
+  .name-row input{width:100%;}
+  .guest-entry{border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; background:#fff; margin-top:8px;}
+  .guest-name-row{display:flex; gap:8px; align-items:center;}
+  .guest-name-row input{flex:1; min-width:0;}
+  .guest-name-row span{font-size:12px; color:var(--maroon); width:20px; flex:none; font-weight:700;}
+  .guest-select-row{display:flex; gap:8px; margin-top:8px; margin-left:26px;}
+  .guest-select-row select{flex:1 1 0; min-width:0; padding:9px; font-size:12.5px;}
+  .total-box{
+    margin-top:14px; padding:12px 14px; border-radius:10px;
+    background:#EEF6EE; border:1.5px solid var(--teal);
+    display:flex; justify-content:space-between; align-items:center;
+    font-weight:700; color:var(--maroon-deep);
+  }
+  .total-box span:last-child{font-size:18px; font-family:'Yatra One',cursive; color:var(--teal);}
+  .walkin-toggle-row{margin-top:16px;}
+  .attend-toggle input{width:auto;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Dashain · Tihar · Chhath — Check-in</h1>
+  <div class="sub">Nepalese Society Singapore · Committee only</div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ MAIN PANEL ============ -->
+  <div id="mainPanel">
+
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="statTotal">0</div><div class="l">RSVPs</div></div>
+      <div class="stat"><div class="n" id="statPax">0</div><div class="l">Total pax</div></div>
+      <div class="stat"><div class="n" id="statIn">0</div><div class="l">Checked in</div></div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Search by name, phone, or confirmation code">
+      <button class="btn-secondary" onclick="loadGuests()">↻ Refresh</button>
+    </div>
+    <div class="error" id="loadError"></div>
+
+    <div class="walkin-toggle-row">
+      <button class="btn-secondary" style="width:100%;" onclick="toggleWalkinForm()" id="walkinToggleBtn">➕ Add walk-in guest</button>
+    </div>
+
+    <div class="card hidden" id="walkinCard">
+      <h2 style="font-size:19px; margin:0 0 4px;">Add walk-in guest</h2>
+      <p class="hint" style="margin-bottom:4px;">For guests who didn't RSVP online — this creates a new entry in the same list.</p>
+
+      <label class="first">Name</label>
+      <div class="name-row">
+        <input type="text" id="wFirstName" placeholder="First name">
+        <input type="text" id="wLastName" placeholder="Last name">
+      </div>
+
+      <label>Contact number</label>
+      <input type="text" id="wPhone" placeholder="+65 8xxx xxxx">
+
+      <label>Email <span style="font-weight:400;opacity:.6;">(optional)</span></label>
+      <input type="text" id="wEmail" placeholder="you@example.com">
+
+      <label>Number of pax</label>
+      <input type="text" id="wPax" value="1" inputmode="numeric">
+
+      <label>Party members, ticket type &amp; meal</label>
+      <p class="hint" style="margin-top:-2px;">Adult S$45 · Child (13 &amp; below) Free</p>
+      <div id="wGuestWrap"></div>
+
+      <div class="total-box">
+        <span>Total payable</span>
+        <span id="wTotalAmount">$0</span>
+      </div>
+
+      <label>Payment</label>
+      <select id="wPaid">
+        <option value="" selected>Not paid yet</option>
+        <option value="Paid - Cash">Paid — Cash</option>
+        <option value="Paid - PayNow">Paid — PayNow</option>
+      </select>
+
+      <label class="attend-toggle" style="margin-top:14px; cursor:pointer; display:flex;">
+        <input type="checkbox" id="wAttend" checked>
+        Check in immediately
+      </label>
+
+      <label>Remarks <span style="font-weight:400;opacity:.6;">(optional)</span></label>
+      <textarea id="wRemarks" rows="2" placeholder="Optional"></textarea>
+
+      <div class="error" id="walkinError"></div>
+      <button class="btn-primary" onclick="submitWalkin()">Add guest</button>
+    </div>
+
+    <div id="guestList"></div>
+  </div>
+
+</div>
+
+<footer>Made for Nepalese Society Singapore · Dashain, Tihar &amp; Chhath celebration</footer>
+
+<script>
+const CONFIG = {
+  apiUrl: "https://script.google.com/macros/s/AKfycby9Db8YmEaw-x1Y2ROOGOGpr-rXc01BuVNCfIAx3eAs84nRTGCZII5UzCQih5yv0KYrfw/exec"
+};
+
+let allGuests = [];
+
+const PRICES = { adult: 45, child: 0 };
+const PRICE_OPTIONS = [
+  { value: 'adult', label: 'Adult — S$45' },
+  { value: 'child', label: 'Child (13 & below) — Free' }
+];
+const MEAL_OPTIONS = [
+  { value: 'veg', label: 'Vegetarian' },
+  { value: 'nonveg', label: 'Non-vegetarian' }
+];
+
+function toggleWalkinForm(){
+  const card = document.getElementById('walkinCard');
+  const willShow = card.classList.contains('hidden');
+  card.classList.toggle('hidden');
+  document.getElementById('walkinToggleBtn').textContent = willShow ? '✕ Close walk-in form' : '➕ Add walk-in guest';
+  if(willShow && !document.getElementById('wGuestWrap').innerHTML){
+    renderWalkinGuests();
+  }
+}
+
+function wFullName(){
+  const first = document.getElementById('wFirstName').value.trim();
+  const last = document.getElementById('wLastName').value.trim();
+  return (first + ' ' + last).trim();
+}
+
+function renderWalkinGuests(){
+  const pax = Math.max(1, Math.min(20, parseInt(document.getElementById('wPax').value || "1", 10)));
+  const wrap = document.getElementById('wGuestWrap');
+  const nameVal = wFullName();
+  wrap.innerHTML = "";
+  const typeOptionsHtml = '<option value="" disabled selected>Ticket type…</option>' +
+    PRICE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  const mealOptionsHtml = '<option value="" disabled selected>Meal…</option>' +
+    MEAL_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  for(let i=1;i<=pax;i++){
+    const entry = document.createElement('div');
+    entry.className = 'guest-entry';
+    const isFirst = i===1;
+    entry.innerHTML = `
+      <div class="guest-name-row">
+        <span>${i}.</span>
+        <input type="text" class="wGuestName" placeholder="${isFirst?'Guest name':'Guest name'}" ${isFirst?'data-autofill="true"':''}>
+      </div>
+      <div class="guest-select-row">
+        <select class="wGuestType">${typeOptionsHtml}</select>
+        <select class="wGuestMeal">${mealOptionsHtml}</select>
+      </div>`;
+    wrap.appendChild(entry);
+    if(isFirst){
+      const input = entry.querySelector('input');
+      input.value = nameVal;
+      input.addEventListener('input', ()=> input.removeAttribute('data-autofill'));
+    }
+    entry.querySelector('.wGuestType').addEventListener('change', computeWalkinTotal);
+  }
+  computeWalkinTotal();
+}
+
+function computeWalkinTotal(){
+  const types = Array.from(document.querySelectorAll('.wGuestType')).map(s => s.value);
+  const total = types.reduce((sum, t) => sum + (PRICES[t] || 0), 0);
+  document.getElementById('wTotalAmount').textContent = '$' + total;
+}
+
+function bindInput(id, handler){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', handler);
+}
+bindInput('wPax', renderWalkinGuests);
+function syncWalkinGuest1(){
+  const g1 = document.querySelector('.wGuestName[data-autofill="true"]');
+  if(g1) g1.value = wFullName();
+}
+bindInput('wFirstName', syncWalkinGuest1);
+bindInput('wLastName', syncWalkinGuest1);
+
+function showWalkinError(msg){
+  const el = document.getElementById('walkinError');
+  el.textContent = msg;
+}
+
+async function submitWalkin(){
+  const firstName = document.getElementById('wFirstName').value.trim();
+  const lastName = document.getElementById('wLastName').value.trim();
+  const name = (firstName + ' ' + lastName).trim();
+  const phone = document.getElementById('wPhone').value.trim();
+  const email = document.getElementById('wEmail').value.trim();
+  const pax = parseInt(document.getElementById('wPax').value || "1", 10);
+  const remarks = document.getElementById('wRemarks').value.trim();
+  const nameEls = Array.from(document.querySelectorAll('.wGuestName'));
+  const typeEls = Array.from(document.querySelectorAll('.wGuestType'));
+  const mealEls = Array.from(document.querySelectorAll('.wGuestMeal'));
+  const guests = nameEls.map((el, idx) => ({
+    name: el.value.trim(),
+    type: typeEls[idx] ? typeEls[idx].value : '',
+    meal: mealEls[idx] ? mealEls[idx].value : ''
+  }));
+  const guestNames = guests.map(g => g.name).filter(Boolean);
+
+  if(!firstName || !lastName){ showWalkinError('Please enter both first and last name.'); return; }
+  if(!phone){ showWalkinError('Please enter a contact number.'); return; }
+  if(!pax || pax < 1){ showWalkinError('Please enter how many pax.'); return; }
+  if(typeEls.some(el => !el.value)){ showWalkinError('Please select a ticket type for everyone.'); return; }
+  if(mealEls.some(el => !el.value)){ showWalkinError('Please select a meal preference for everyone.'); return; }
+  showWalkinError('');
+
+  const total = guests.reduce((sum, g) => sum + (PRICES[g.type] || 0), 0);
+  const code = ('NSS-' + Math.random().toString(36).slice(2,7)).toUpperCase();
+  const paid = document.getElementById('wPaid').value;
+  const attend = document.getElementById('wAttend').checked;
+
+  const payload = {
+    code, name, firstName, lastName, phone, email, pax, guestNames, guests, total,
+    notes: 'Walk-in registration at the door',
+    payment: paid ? (paid.indexOf('PayNow') > -1 ? 'paynow' : 'cash') : 'cash',
+    submittedAt: new Date().toISOString(),
+    isEdit: false,
+    initialPaid: paid,
+    initialAttendance: attend,
+    initialRemarks: remarks
+  };
+
+  const btn = event.target;
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+
+  try{
+    const res = await fetch(CONFIG.apiUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.status !== 'ok'){ throw new Error(data.message || 'Could not add guest'); }
+
+    // Reset the form and refresh the list to include the new arrival.
+    document.getElementById('wFirstName').value = '';
+    document.getElementById('wLastName').value = '';
+    document.getElementById('wPhone').value = '';
+    document.getElementById('wEmail').value = '';
+    document.getElementById('wPax').value = 1;
+    document.getElementById('wRemarks').value = '';
+    document.getElementById('wPaid').value = '';
+    document.getElementById('wAttend').checked = true;
+    renderWalkinGuests();
+    toggleWalkinForm();
+    await loadGuests();
+    document.getElementById('searchInput').value = name;
+    renderGuestList();
+  }catch(e){
+    showWalkinError('Could not add this guest — check your connection and try again. (' + e.message + ')');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+function esc(s){
+  const d = document.createElement('div');
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+async function loadGuests(){
+  const errEl = document.getElementById('loadError');
+  errEl.textContent = '';
+  document.getElementById('guestList').innerHTML = '<p class="hint">Loading guest list…</p>';
+  try{
+    const res = await fetch(CONFIG.apiUrl, { method: 'GET' });
+    const data = await res.json();
+    if(data.status !== 'ok'){ throw new Error(data.message || 'Unknown error'); }
+    allGuests = data.guests || [];
+    renderStats();
+    renderGuestList();
+  }catch(e){
+    document.getElementById('guestList').innerHTML = '';
+    errEl.textContent = 'Could not load the guest list. Check your connection and try Refresh. (' + e.message + ')';
+  }
+}
+
+function renderStats(){
+  const totalPax = allGuests.reduce((s,g)=> s + (parseInt(g.pax,10) || 0), 0);
+  const checkedIn = allGuests.filter(g => g.attendance === true || g.attendance === 'TRUE' || g.attendance === 'Checked in').length;
+  document.getElementById('statTotal').textContent = allGuests.length;
+  document.getElementById('statPax').textContent = totalPax;
+  document.getElementById('statIn').textContent = checkedIn;
+}
+
+function isCheckedIn(g){
+  return g.attendance === true || g.attendance === 'TRUE' || g.attendance === 'Checked in';
+}
+
+function renderGuestList(){
+  const searchEl = document.getElementById('searchInput');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const list = document.getElementById('guestList');
+  const filtered = (!q ? allGuests.slice() : allGuests.filter(g =>
+    (g.name||'').toLowerCase().includes(q) ||
+    (g.phone||'').toLowerCase().includes(q) ||
+    (g.code||'').toLowerCase().includes(q)
+  )).sort((a, b) => (a.name||'').localeCompare(b.name||''));
+
+  if(!filtered.length){
+    list.innerHTML = '<p class="hint" style="margin-top:16px;">No matching RSVPs.</p>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((g, idx) => {
+    const checkedIn = isCheckedIn(g);
+    const paidVal = g.paid || '';
+    return `
+    <div class="guest-card ${checkedIn ? 'checked-in' : ''}" data-code="${esc(g.code)}">
+      <div class="guest-top">
+        <div>
+          <div class="guest-name">${esc(g.name)}</div>
+          <div class="guest-ref">${esc(g.code)} · ${esc(g.reference)}</div>
+        </div>
+        <div class="guest-badge ${checkedIn ? 'badge-in' : 'badge-out'}">${checkedIn ? '✓ Checked in' : 'Not yet'}</div>
+      </div>
+      <div class="guest-meta">
+        Pax: ${esc(g.pax)} · Amount due: ${esc(g.amountDue)} · Intended: ${esc(g.payment)}<br>
+        ${esc(g.breakdown)}
+      </div>
+      <div class="guest-controls">
+        <select class="ctrl-paid">
+          <option value="" ${paidVal===''?'selected':''}>Not paid yet</option>
+          <option value="Paid - Cash" ${paidVal==='Paid - Cash'?'selected':''}>Paid — Cash</option>
+          <option value="Paid - PayNow" ${paidVal==='Paid - PayNow'?'selected':''}>Paid — PayNow</option>
+        </select>
+        <label class="attend-toggle">
+          <input type="checkbox" class="ctrl-attend" ${checkedIn?'checked':''}>
+          Checked in
+        </label>
+        <textarea class="ctrl-remarks full" rows="2" placeholder="Remarks (optional)">${esc(g.remarks)}</textarea>
+        <button class="btn-primary full" style="margin-top:0;" onclick="saveGuest(this)">Save</button>
+      </div>
+      <div class="save-status"></div>
+    </div>`;
+  }).join('');
+}
+
+bindInput('searchInput', renderGuestList);
+
+async function saveGuest(btn){
+  const card = btn.closest('.guest-card');
+  const code = card.getAttribute('data-code');
+  const paid = card.querySelector('.ctrl-paid').value;
+  const attended = card.querySelector('.ctrl-attend').checked;
+  const remarks = card.querySelector('.ctrl-remarks').value;
+  const statusEl = card.querySelector('.save-status');
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  statusEl.textContent = '';
+  statusEl.className = 'save-status';
+
+  try{
+    const res = await fetch(CONFIG.apiUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'checkin', code, paid, attendance: attended, remarks })
+    });
+    const data = await res.json();
+    if(data.status !== 'ok'){ throw new Error(data.message || 'Save failed'); }
+
+    // Update local cache + UI without a full reload
+    const g = allGuests.find(x => x.code === code);
+    if(g){ g.paid = paid; g.attendance = attended; g.remarks = remarks; }
+    card.classList.toggle('checked-in', attended);
+    card.querySelector('.guest-badge').className = 'guest-badge ' + (attended ? 'badge-in' : 'badge-out');
+    card.querySelector('.guest-badge').textContent = attended ? '✓ Checked in' : 'Not yet';
+    renderStats();
+
+    statusEl.textContent = 'Saved ✓';
+    statusEl.className = 'save-status ok';
+  }catch(e){
+    statusEl.textContent = 'Could not save — try again. (' + e.message + ')';
+    statusEl.className = 'save-status err';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+loadGuests();
+</script>
+</body>
+</html>
