@@ -123,8 +123,17 @@
 
 <div class="wrap">
 
+  <!-- ============ COMMITTEE KEY ============ -->
+  <div class="card" id="keyCard" style="max-width:380px; margin:16px auto 0; text-align:center;">
+    <h2 style="font-size:19px; margin:0 0 6px;">Committee key</h2>
+    <p class="hint" style="margin-bottom:14px;">Enter the committee key to open the guest list.</p>
+    <input type="password" id="keyInput" placeholder="Committee key" autocomplete="off">
+    <div class="error" id="keyError"></div>
+    <button class="btn-primary" onclick="submitKey()">Open guest list</button>
+  </div>
+
   <!-- ============ MAIN PANEL ============ -->
-  <div id="mainPanel">
+  <div id="mainPanel" class="hidden">
 
     <div class="stat-row">
       <div class="stat"><div class="n" id="statTotal">0</div><div class="l">RSVPs</div></div>
@@ -135,6 +144,7 @@
     <div class="search-row">
       <input type="text" id="searchInput" placeholder="Search by name, phone, or confirmation code">
       <button class="btn-secondary" onclick="loadGuests()">↻ Refresh</button>
+      <button class="btn-secondary" onclick="lockPage()">🔒 Lock</button>
     </div>
     <div class="error" id="loadError"></div>
 
@@ -162,7 +172,7 @@
       <input type="text" id="wPax" value="1" inputmode="numeric">
 
       <label>Party members, ticket type &amp; meal</label>
-      <p class="hint" style="margin-top:-2px;">Adult S$45 · Child (12 &amp; below) Free</p>
+      <p class="hint" style="margin-top:-2px;">Adult S$50 · Child (12 &amp; below) Free</p>
       <div id="wGuestWrap"></div>
 
       <div class="total-box">
@@ -203,9 +213,9 @@ const CONFIG = {
 
 let allGuests = [];
 
-const PRICES = { adult: 45, child: 0 };
+const PRICES = { adult: 50, child: 0 };
 const PRICE_OPTIONS = [
-  { value: 'adult', label: 'Adult — S$45' },
+  { value: 'adult', label: 'Adult — S$50' },
   { value: 'child', label: 'Child (12 & below) — Free' }
 ];
 const MEAL_OPTIONS = [
@@ -323,7 +333,8 @@ async function submitWalkin(){
     isEdit: false,
     initialPaid: paid,
     initialAttendance: attend,
-    initialRemarks: remarks
+    initialRemarks: remarks,
+    key: getKey()
   };
 
   const btn = event.target;
@@ -368,19 +379,73 @@ function esc(s){
   return d.innerHTML;
 }
 
+const KEY_STORE = 'festival_committee_key';
+let memoryKey = '';
+function getKey(){
+  try{ return localStorage.getItem(KEY_STORE) || memoryKey; }catch(e){ return memoryKey; }
+}
+function setKey(k){
+  memoryKey = k;
+  try{ localStorage.setItem(KEY_STORE, k); }catch(e){}
+}
+function clearKey(){
+  memoryKey = '';
+  try{ localStorage.removeItem(KEY_STORE); }catch(e){}
+}
+function showKeyCard(msg){
+  document.getElementById('mainPanel').classList.add('hidden');
+  document.getElementById('keyCard').classList.remove('hidden');
+  document.getElementById('keyError').textContent = msg || '';
+}
+function showMainPanel(){
+  document.getElementById('keyCard').classList.add('hidden');
+  document.getElementById('mainPanel').classList.remove('hidden');
+}
+function submitKey(){
+  const v = document.getElementById('keyInput').value.trim();
+  if(!v){ document.getElementById('keyError').textContent = 'Please enter the key.'; return; }
+  setKey(v);
+  loadGuests();
+}
+function lockPage(){
+  clearKey();
+  allGuests = [];
+  document.getElementById('guestList').innerHTML = '';
+  document.getElementById('keyInput').value = '';
+  showKeyCard('');
+}
+const keyInputEl = document.getElementById('keyInput');
+if(keyInputEl) keyInputEl.addEventListener('keydown', e => { if(e.key === 'Enter') submitKey(); });
+
 async function loadGuests(){
+  const key = getKey();
+  if(!key){ showKeyCard(''); return; }
   const errEl = document.getElementById('loadError');
   errEl.textContent = '';
   document.getElementById('guestList').innerHTML = '<p class="hint">Loading guest list…</p>';
   try{
-    const res = await fetch(CONFIG.apiUrl, { method: 'GET' });
+    const res = await fetch(CONFIG.apiUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'list', key })
+    });
     const data = await res.json();
-    if(data.status !== 'ok'){ throw new Error(data.message || 'Unknown error'); }
+    if(data.status !== 'ok'){
+      if(data.message === 'Unauthorized'){
+        clearKey();
+        document.getElementById('guestList').innerHTML = '';
+        showKeyCard('That key is not correct. Please try again.');
+        return;
+      }
+      throw new Error(data.message || 'Unknown error');
+    }
+    showMainPanel();
     allGuests = data.guests || [];
     renderStats();
     renderGuestList();
   }catch(e){
     document.getElementById('guestList').innerHTML = '';
+    showMainPanel();
     errEl.textContent = 'Could not load the guest list. Check your connection and try Refresh. (' + e.message + ')';
   }
 }
@@ -465,10 +530,13 @@ async function saveGuest(btn){
     const res = await fetch(CONFIG.apiUrl, {
       method: 'POST',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'checkin', code, paid, attendance: attended, remarks })
+      body: JSON.stringify({ action: 'checkin', key: getKey(), code, paid, attendance: attended, remarks })
     });
     const data = await res.json();
-    if(data.status !== 'ok'){ throw new Error(data.message || 'Save failed'); }
+    if(data.status !== 'ok'){
+      if(data.message === 'Unauthorized'){ clearKey(); showKeyCard('The key is no longer accepted — please enter it again.'); return; }
+      throw new Error(data.message || 'Save failed');
+    }
 
     // Update local cache + UI without a full reload
     const g = allGuests.find(x => x.code === code);
@@ -489,7 +557,7 @@ async function saveGuest(btn){
   }
 }
 
-loadGuests();
+if(getKey()){ loadGuests(); } else { showKeyCard(''); }
 </script>
 </body>
 </html>
