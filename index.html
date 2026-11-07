@@ -93,6 +93,23 @@
   .save-status.ok{color:var(--teal);}
   .save-status.err{color:#B0332F;}
 
+  .pay-table .num{width:auto; min-width:72px;}
+  .pay-table .due{color:var(--maroon); font-weight:700;}
+  .meal-card{margin:0 0 12px; overflow-x:auto;}
+  .tabs{display:flex; gap:8px; margin:4px 0 6px;}
+  .tab{flex:1; padding:10px; border-radius:10px; border:1.5px solid var(--maroon); background:#fff; color:var(--maroon); font-weight:700; font-size:14px;}
+  .tab.active{background:var(--maroon); color:#fff;}
+  .list-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin:12px 0 8px;}
+  .tbl-wrap{overflow-x:auto;}
+  .guest-table{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); font-size:14px;}
+  .guest-table th, .guest-table td{padding:10px 12px; border-bottom:1px solid var(--line); text-align:left;}
+  .guest-table th{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; opacity:0.6; background:var(--cream-2);}
+  .guest-table .num{text-align:center; width:84px;}
+  .guest-table tfoot td{font-weight:700; background:var(--cream-2); border-bottom:none;}
+  @media print{
+    .topbar, .stat-row, .meal-card, .tabs, .list-head button, footer{display:none !important;}
+    body{background:#fff;}
+  }
   footer{text-align:center; font-size:11.5px; opacity:0.5; padding:24px 0;}
 
   .name-row{display:flex; gap:10px;}
@@ -140,6 +157,41 @@
       <div class="stat"><div class="n" id="statPax">0</div><div class="l">Total pax</div></div>
       <div class="stat"><div class="n" id="statIn">0</div><div class="l">Checked in</div></div>
     </div>
+    <div class="stat-row" style="margin-top:-6px;">
+      <div class="stat"><div class="n" id="statAdults">0</div><div class="l">Adults</div></div>
+      <div class="stat"><div class="n" id="statChildren">0</div><div class="l">Children</div></div>
+    </div>
+    <div class="meal-card">
+      <table class="guest-table pay-table">
+        <thead><tr><th>Payments</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Yet to receive</th></tr></thead>
+        <tbody>
+          <tr><td>Cash</td><td class="num" id="payCashT">S$0</td><td class="num" id="payCashP">S$0</td><td class="num due" id="payCashD">S$0</td></tr>
+          <tr><td>PayNow</td><td class="num" id="payPnT">S$0</td><td class="num" id="payPnP">S$0</td><td class="num due" id="payPnD">S$0</td></tr>
+          <tr id="payOtherRow" style="display:none;"><td>Not chosen</td><td class="num" id="payOthT">S$0</td><td class="num" id="payOthP">S$0</td><td class="num due" id="payOthD">S$0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="num" id="payTotT">S$0</td><td class="num" id="payTotP">S$0</td><td class="num due" id="payTotD">S$0</td></tr></tfoot>
+      </table>
+      <div class="hint">Cash / PayNow = the method each guest chose on the form. Paid = marked as paid on the Check-in tab.</div>
+    </div>
+
+    <div class="meal-card">
+      <table class="guest-table">
+        <thead><tr><th>Meals</th><th class="num">Adults</th><th class="num">Children</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Vegetarian</td><td class="num" id="mealVegA">0</td><td class="num" id="mealVegC">0</td><td class="num" id="mealVegT">0</td></tr>
+          <tr><td>Non-vegetarian</td><td class="num" id="mealNonA">0</td><td class="num" id="mealNonC">0</td><td class="num" id="mealNonT">0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="num" id="mealTotA">0</td><td class="num" id="mealTotC">0</td><td class="num" id="mealTotT">0</td></tr></tfoot>
+      </table>
+      <div class="hint" id="mealNote" style="display:none;"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabCheckin" onclick="showView('checkin')">Check-in</button>
+      <button class="tab" id="tabList" onclick="showView('list')">Guest list</button>
+    </div>
+
+    <div id="viewCheckin">
 
     <div class="search-row">
       <input type="text" id="searchInput" placeholder="Search by name, phone, or confirmation code">
@@ -200,6 +252,21 @@
     </div>
 
     <div id="guestList"></div>
+    </div><!-- /viewCheckin -->
+
+    <div id="viewList" class="hidden">
+      <div class="list-head">
+        <div class="hint" style="margin:0;">Names with number of adults and children</div>
+        <button class="btn-secondary" onclick="window.print()">🖨 Print</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="guest-table">
+          <thead><tr><th>Name</th><th class="num">Adults</th><th class="num">Children</th><th class="num">Total pax</th></tr></thead>
+          <tbody id="guestTableBody"></tbody>
+          <tfoot id="guestTableFoot"></tfoot>
+        </table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -450,12 +517,115 @@ async function loadGuests(){
   }
 }
 
+function guestCounts(g){
+  let a = parseInt(g.adults, 10) || 0;
+  const c = parseInt(g.children, 10) || 0;
+  const p = parseInt(g.pax, 10) || 0;
+  if(a + c === 0 && p > 0) a = p;   // safety net: counts missing, treat the party as adults
+  return { a, c };
+}
+
+function moneyValue(v){
+  const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+function formatMoney(n){
+  return 'S$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+function isPaid(g){
+  return /^paid/i.test(String(g.paid || '').trim());
+}
+
+// Reads each guest's breakdown text, e.g. "Sita (Adult, Vegetarian), Mini (Child (12 & below), Non-vegetarian)"
+function mealCounts(g){
+  const out = { vA: 0, vC: 0, nA: 0, nC: 0 };
+  const re = /\(([^,()]+(?:\([^)]*\))?),\s*(Vegetarian|Non-vegetarian)\)/g;
+  const text = String(g.breakdown || '');
+  let m;
+  while((m = re.exec(text))){
+    const child = /^\s*Child/i.test(m[1]);
+    if(m[2] === 'Vegetarian'){ if(child) out.vC++; else out.vA++; }
+    else { if(child) out.nC++; else out.nA++; }
+  }
+  return out;
+}
+
 function renderStats(){
   const totalPax = allGuests.reduce((s,g)=> s + (parseInt(g.pax,10) || 0), 0);
   const checkedIn = allGuests.filter(g => g.attendance === true || g.attendance === 'TRUE' || g.attendance === 'Checked in').length;
+  const adults = allGuests.reduce((s,g)=> s + guestCounts(g).a, 0);
+  const children = allGuests.reduce((s,g)=> s + guestCounts(g).c, 0);
   document.getElementById('statTotal').textContent = allGuests.length;
   document.getElementById('statPax').textContent = totalPax;
   document.getElementById('statIn').textContent = checkedIn;
+  document.getElementById('statAdults').textContent = adults;
+  document.getElementById('statChildren').textContent = children;
+  const payOf = g => String(g.payment || '').trim().toLowerCase();
+  const sums = { cash: [0, 0], paynow: [0, 0], other: [0, 0] };   // [total, paid]
+  allGuests.forEach(g => {
+    const k = payOf(g) === 'cash' ? 'cash' : (payOf(g) === 'paynow' ? 'paynow' : 'other');
+    const amt = moneyValue(g.amountDue);
+    sums[k][0] += amt;
+    if(isPaid(g)) sums[k][1] += amt;
+  });
+  const setMoney = (id, n) => { document.getElementById(id).textContent = formatMoney(n); };
+  setMoney('payCashT', sums.cash[0]);   setMoney('payCashP', sums.cash[1]);   setMoney('payCashD', sums.cash[0] - sums.cash[1]);
+  setMoney('payPnT', sums.paynow[0]);   setMoney('payPnP', sums.paynow[1]);   setMoney('payPnD', sums.paynow[0] - sums.paynow[1]);
+  setMoney('payOthT', sums.other[0]);   setMoney('payOthP', sums.other[1]);   setMoney('payOthD', sums.other[0] - sums.other[1]);
+  document.getElementById('payOtherRow').style.display = sums.other[0] > 0 ? '' : 'none';
+  const allT = sums.cash[0] + sums.paynow[0] + sums.other[0];
+  const allP = sums.cash[1] + sums.paynow[1] + sums.other[1];
+  setMoney('payTotT', allT);  setMoney('payTotP', allP);  setMoney('payTotD', allT - allP);
+
+  const meals = allGuests.reduce((t, g) => {
+    const m = mealCounts(g);
+    t.vA += m.vA; t.vC += m.vC; t.nA += m.nA; t.nC += m.nC;
+    return t;
+  }, { vA: 0, vC: 0, nA: 0, nC: 0 });
+  const set = (id, v) => { document.getElementById(id).textContent = v; };
+  set('mealVegA', meals.vA); set('mealVegC', meals.vC); set('mealVegT', meals.vA + meals.vC);
+  set('mealNonA', meals.nA); set('mealNonC', meals.nC); set('mealNonT', meals.nA + meals.nC);
+  set('mealTotA', meals.vA + meals.nA); set('mealTotC', meals.vC + meals.nC);
+  const mealPax = meals.vA + meals.vC + meals.nA + meals.nC;
+  set('mealTotT', mealPax);
+  const noteEl = document.getElementById('mealNote');
+  if(mealPax < totalPax){
+    noteEl.style.display = 'block';
+    noteEl.textContent = (totalPax - mealPax) + ' guest(s) have no meal choice recorded (older entries).';
+  } else {
+    noteEl.style.display = 'none';
+    noteEl.textContent = '';
+  }
+  renderGuestTable();
+}
+
+function renderGuestTable(){
+  const body = document.getElementById('guestTableBody');
+  const foot = document.getElementById('guestTableFoot');
+  if(!body || !foot) return;
+  const sorted = allGuests.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
+  if(!sorted.length){
+    body.innerHTML = '<tr><td colspan="4" class="hint">No RSVPs yet.</td></tr>';
+    foot.innerHTML = '';
+    return;
+  }
+  let ta = 0, tc = 0, tp = 0;
+  body.innerHTML = sorted.map(g => {
+    const n = guestCounts(g);
+    const p = parseInt(g.pax, 10) || (n.a + n.c);
+    ta += n.a; tc += n.c; tp += p;
+    return `<tr><td>${esc(g.name)}</td><td class="num">${n.a}</td><td class="num">${n.c}</td><td class="num">${p}</td></tr>`;
+  }).join('');
+  foot.innerHTML = `<tr><td>Total (${sorted.length} RSVPs)</td><td class="num">${ta}</td><td class="num">${tc}</td><td class="num">${tp}</td></tr>`;
+}
+
+function showView(name){
+  const isList = name === 'list';
+  document.getElementById('viewCheckin').classList.toggle('hidden', isList);
+  document.getElementById('viewList').classList.toggle('hidden', !isList);
+  document.getElementById('tabCheckin').classList.toggle('active', !isList);
+  document.getElementById('tabList').classList.toggle('active', isList);
+  if(isList) renderGuestTable();
 }
 
 function isCheckedIn(g){
